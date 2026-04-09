@@ -158,6 +158,17 @@ function hasQwenProvider(config: OpencodeConfig): boolean {
   );
 }
 
+function isQwenProviderCurrent(config: OpencodeConfig): boolean {
+  if (!hasQwenProvider(config)) return false;
+  const existing = config.provider?.qwen as Record<string, unknown>;
+  const expected = DEFAULT_PROVIDER_CONFIG.qwen;
+  return (
+    existing.npm === expected.npm &&
+    JSON.stringify(existing.options) === JSON.stringify(expected.options) &&
+    JSON.stringify(existing.models) === JSON.stringify(expected.models)
+  );
+}
+
 function addPlugin(config: OpencodeConfig): OpencodeConfig {
   const updated: OpencodeConfig = JSON.parse(JSON.stringify(config));
 
@@ -183,12 +194,10 @@ function addProvider(config: OpencodeConfig): OpencodeConfig {
     updated.provider = {};
   }
 
-  if (!hasQwenProvider(updated)) {
-    updated.provider = {
-      ...updated.provider,
-      ...DEFAULT_PROVIDER_CONFIG,
-    };
-  }
+  updated.provider = {
+    ...updated.provider,
+    ...DEFAULT_PROVIDER_CONFIG,
+  };
 
   return updated;
 }
@@ -211,6 +220,12 @@ function showDiff(before: OpencodeConfig, after: OpencodeConfig): void {
   }
   if (!hasQwenProvider(before) && hasQwenProvider(after)) {
     changeLines.push("Added provider: qwen");
+  } else if (
+    hasQwenProvider(before) &&
+    !isQwenProviderCurrent(before) &&
+    isQwenProviderCurrent(after)
+  ) {
+    changeLines.push("Updated provider: qwen (models and options)");
   }
 
   if (changeLines.length === 0) {
@@ -288,9 +303,9 @@ export function install(options: { global?: boolean } = {}): {
 
   let config = existsSync(configPath) ? loadConfig(configPath) : {};
   const alreadyHasPlugin = hasPlugin(config);
-  const alreadyHasProvider = hasQwenProvider(config);
+  const providerCurrent = isQwenProviderCurrent(config);
 
-  if (alreadyHasPlugin && alreadyHasProvider) {
+  if (alreadyHasPlugin && providerCurrent) {
     return { success: true, configPath, alreadyInstalled: true };
   }
 

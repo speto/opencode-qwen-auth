@@ -109,8 +109,17 @@ describe("CLI installer", () => {
         provider: {
           qwen: {
             npm: "@ai-sdk/openai",
-            options: { baseURL: "https://portal.qwen.ai/v1" },
-            models: {},
+            options: {
+              baseURL: "https://portal.qwen.ai/v1",
+              compatibility: "strict",
+            },
+            models: {
+              "coder-model": {
+                name: "Qwen Coder",
+                attachment: true,
+                limit: { context: 1000000, output: 65536 },
+              },
+            },
           },
         },
       };
@@ -135,7 +144,20 @@ describe("CLI installer", () => {
         $schema: "https://opencode.ai/config.json",
         plugin: ["opencode-qwen-auth@1.0.0"],
         provider: {
-          qwen: { npm: "@ai-sdk/openai" },
+          qwen: {
+            npm: "@ai-sdk/openai",
+            options: {
+              baseURL: "https://portal.qwen.ai/v1",
+              compatibility: "strict",
+            },
+            models: {
+              "coder-model": {
+                name: "Qwen Coder",
+                attachment: true,
+                limit: { context: 1000000, output: 65536 },
+              },
+            },
+          },
         },
       };
       writeFileSync(
@@ -168,14 +190,17 @@ describe("CLI installer", () => {
       expect(config.provider.qwen).toBeDefined();
     });
 
-    it("should not overwrite existing qwen provider", () => {
+    it("should update stale qwen provider to current defaults", () => {
       const existingConfig = {
         $schema: "https://opencode.ai/config.json",
         plugin: ["opencode-qwen-auth"],
         provider: {
           qwen: {
             npm: "@ai-sdk/openai",
-            customOption: true,
+            options: { baseURL: "https://portal.qwen.ai/v1" },
+            models: {
+              "qwen3-coder-plus": { contextWindow: 1048576 },
+            },
           },
         },
       };
@@ -186,8 +211,13 @@ describe("CLI installer", () => {
 
       const result = install();
 
+      expect(result.success).toBe(true);
+      expect(result.alreadyInstalled).toBe(false);
+
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
-      expect(config.provider.qwen.customOption).toBe(true);
+      expect(config.provider.qwen.models["coder-model"]).toBeDefined();
+      expect(config.provider.qwen.models["qwen3-coder-plus"]).toBeUndefined();
+      expect(config.provider.qwen.options.compatibility).toBe("strict");
     });
 
     it("should find config in .opencode directory", () => {
@@ -222,6 +252,62 @@ describe("CLI installer", () => {
       expect(coderModel.name).toBe("Qwen Coder");
       expect(coderModel.attachment).toBe(true);
       expect(coderModel.limit).toEqual({ context: 1_000_000, output: 65_536 });
+    });
+
+    it("should report already installed when provider is current", () => {
+      const existingConfig = {
+        $schema: "https://opencode.ai/config.json",
+        plugin: ["opencode-qwen-auth"],
+        provider: {
+          qwen: {
+            npm: "@ai-sdk/openai",
+            options: {
+              baseURL: "https://portal.qwen.ai/v1",
+              compatibility: "strict",
+            },
+            models: {
+              "coder-model": {
+                name: "Qwen Coder",
+                attachment: true,
+                limit: { context: 1000000, output: 65536 },
+              },
+            },
+          },
+        },
+      };
+      writeFileSync(
+        join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const result = install();
+
+      expect(result.success).toBe(true);
+      expect(result.alreadyInstalled).toBe(true);
+    });
+
+    it("should preserve other providers when updating qwen", () => {
+      const existingConfig = {
+        $schema: "https://opencode.ai/config.json",
+        provider: {
+          openai: { apiKey: "test-key" },
+          qwen: {
+            npm: "@ai-sdk/openai",
+            models: { "old-model": { contextWindow: 1024 } },
+          },
+        },
+      };
+      writeFileSync(
+        join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const result = install();
+
+      const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
+      expect(config.provider.openai.apiKey).toBe("test-key");
+      expect(config.provider.qwen.models["coder-model"]).toBeDefined();
+      expect(config.provider.qwen.models["old-model"]).toBeUndefined();
     });
 
     it("should complete without prompting when skipPrompt is true", async () => {
