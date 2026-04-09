@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import lockfile from "proper-lockfile";
+import { lock } from "proper-lockfile";
 import type { RotationStrategy } from "./config/schema";
 import {
   type AccountWithMetrics,
@@ -89,7 +89,7 @@ async function ensureFileExists(path: string): Promise<void> {
 
 async function withFileLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
   await ensureFileExists(path);
-  const release = await lockfile.lock(path, {
+  const release = await lock(path, {
     stale: 10000,
     retries: {
       retries: 5,
