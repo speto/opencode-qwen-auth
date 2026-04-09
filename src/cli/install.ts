@@ -10,7 +10,7 @@ import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import prompts from "prompts";
 
-const PLUGIN_NAME = "opencode-qwen-auth";
+const PLUGIN_NAME = "@speto/opencode-qwen-auth";
 
 const DEFAULT_PROVIDER_CONFIG = {
   qwen: {
@@ -141,8 +141,10 @@ function createBackup(configPath: string): string | null {
   return backupPath;
 }
 
-/** Extracts bare package name from npm specifiers like "github:user/repo@v1" → "repo" */
-function extractPluginName(specifier: string): string {
+const PLUGIN_BASE_NAME = "opencode-qwen-auth";
+
+/** Extracts unscoped package name from any specifier: "github:user/repo@v1" → "repo", "@scope/pkg" → "pkg" */
+function extractBaseName(specifier: string): string {
   let name = specifier;
 
   const colonIdx = name.indexOf(":");
@@ -161,7 +163,7 @@ function hasPlugin(config: OpencodeConfig): boolean {
   if (!config.plugin || !Array.isArray(config.plugin)) {
     return false;
   }
-  return config.plugin.some((p) => extractPluginName(p) === PLUGIN_NAME);
+  return config.plugin.some((p) => extractBaseName(p) === PLUGIN_BASE_NAME);
 }
 
 function isPluginCurrent(config: OpencodeConfig): boolean {
@@ -200,7 +202,7 @@ function addPlugin(config: OpencodeConfig): OpencodeConfig {
   }
 
   const existingIdx = updated.plugin.findIndex(
-    (p) => extractPluginName(p) === PLUGIN_NAME,
+    (p) => extractBaseName(p) === PLUGIN_BASE_NAME,
   );
 
   if (existingIdx === -1) {
@@ -244,10 +246,10 @@ function showDiff(before: OpencodeConfig, after: OpencodeConfig): void {
     changeLines.push(`Added plugin: ${PLUGIN_NAME}`);
   } else {
     const oldEntry = (before.plugin || []).find(
-      (p) => extractPluginName(p) === PLUGIN_NAME,
+      (p) => extractBaseName(p) === PLUGIN_BASE_NAME,
     );
     const newEntry = (after.plugin || []).find(
-      (p) => extractPluginName(p) === PLUGIN_NAME,
+      (p) => extractBaseName(p) === PLUGIN_BASE_NAME,
     );
     if (oldEntry && newEntry && oldEntry !== newEntry) {
       changeLines.push(`Replaced plugin: ${oldEntry} → ${newEntry}`);

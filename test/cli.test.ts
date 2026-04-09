@@ -39,7 +39,7 @@ describe("CLI installer", () => {
 
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
       expect(config.$schema).toBe("https://opencode.ai/config.json");
-      expect(config.plugin).toContain("opencode-qwen-auth");
+      expect(config.plugin).toContain("@speto/opencode-qwen-auth");
       expect(config.provider.qwen).toBeDefined();
     });
 
@@ -60,7 +60,7 @@ describe("CLI installer", () => {
 
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
       expect(config.someOtherSetting).toBe(true);
-      expect(config.plugin).toContain("opencode-qwen-auth");
+      expect(config.plugin).toContain("@speto/opencode-qwen-auth");
       expect(config.provider.qwen).toBeDefined();
     });
 
@@ -98,14 +98,14 @@ describe("CLI installer", () => {
 
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
       expect(config.plugin).toContain("some-other-plugin");
-      expect(config.plugin).toContain("opencode-qwen-auth");
+      expect(config.plugin).toContain("@speto/opencode-qwen-auth");
       expect(config.plugin.length).toBe(2);
     });
 
     it("should not duplicate plugin if already installed", () => {
       const existingConfig = {
         $schema: "https://opencode.ai/config.json",
-        plugin: ["opencode-qwen-auth"],
+        plugin: ["@speto/opencode-qwen-auth"],
         provider: {
           qwen: {
             npm: "@ai-sdk/openai",
@@ -135,7 +135,8 @@ describe("CLI installer", () => {
 
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
       expect(
-        config.plugin.filter((p: string) => p === "opencode-qwen-auth").length,
+        config.plugin.filter((p: string) => p === "@speto/opencode-qwen-auth")
+          .length,
       ).toBe(1);
     });
 
@@ -170,7 +171,7 @@ describe("CLI installer", () => {
       expect(result.success).toBe(true);
       expect(result.alreadyInstalled).toBe(false);
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
-      expect(config.plugin).toEqual(["opencode-qwen-auth"]);
+      expect(config.plugin).toEqual(["@speto/opencode-qwen-auth"]);
     });
 
     it("should replace github: specifier with canonical plugin name", () => {
@@ -204,7 +205,7 @@ describe("CLI installer", () => {
       expect(result.success).toBe(true);
       expect(result.alreadyInstalled).toBe(false);
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
-      expect(config.plugin).toEqual(["opencode-qwen-auth"]);
+      expect(config.plugin).toEqual(["@speto/opencode-qwen-auth"]);
       expect(config.plugin.length).toBe(1);
     });
 
@@ -238,7 +239,10 @@ describe("CLI installer", () => {
 
       expect(result.success).toBe(true);
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
-      expect(config.plugin).toEqual(["other-plugin", "opencode-qwen-auth"]);
+      expect(config.plugin).toEqual([
+        "other-plugin",
+        "@speto/opencode-qwen-auth",
+      ]);
     });
 
     it("should preserve existing provider config", () => {
@@ -305,7 +309,7 @@ describe("CLI installer", () => {
       expect(result.configPath).toContain("opencode.json");
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
       expect(config.someOtherSetting).toBe(true);
-      expect(config.plugin).toContain("opencode-qwen-auth");
+      expect(config.plugin).toContain("@speto/opencode-qwen-auth");
     });
 
     it("should add correct provider config", () => {
@@ -328,7 +332,7 @@ describe("CLI installer", () => {
     it("should report already installed when provider is current", () => {
       const existingConfig = {
         $schema: "https://opencode.ai/config.json",
-        plugin: ["opencode-qwen-auth"],
+        plugin: ["@speto/opencode-qwen-auth"],
         provider: {
           qwen: {
             npm: "@ai-sdk/openai",
