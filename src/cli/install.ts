@@ -20,8 +20,11 @@ const DEFAULT_PROVIDER_CONFIG = {
       compatibility: "strict",
     },
     models: {
-      "qwen3-coder-plus": { contextWindow: 1048576 },
-      "qwen3-vl-plus": { contextWindow: 262144, attachment: true },
+      "coder-model": {
+        name: "Qwen Coder",
+        attachment: true,
+        limit: { context: 131072, output: 16384 },
+      },
     },
   },
 };
@@ -235,7 +238,7 @@ function printSuccess(configPath: string): void {
   console.log("     \\x1b[36m/connect\\x1b[0m");
   console.log("");
   console.log("  3. Select a Qwen model:");
-  console.log("     \x1b[36m/model qwen/qwen3-coder-plus\x1b[0m");
+  console.log("     \x1b[36m/model qwen/coder-model\x1b[0m");
   console.log("");
 }
 

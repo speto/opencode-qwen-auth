@@ -18,9 +18,17 @@ Add to `opencode.json`:
   "plugin": ["opencode-qwen-auth"],
   "provider": {
     "qwen": {
+      "npm": "@ai-sdk/openai",
+      "options": {
+        "baseURL": "https://portal.qwen.ai/v1",
+        "compatibility": "strict"
+      },
       "models": {
-        "qwen3-coder-plus": { "contextWindow": 1048576 },
-        "qwen3-vl-plus": { "contextWindow": 262144 }
+        "coder-model": {
+          "name": "Qwen Coder",
+          "attachment": true,
+          "limit": { "context": 131072, "output": 16384 }
+        }
       }
     }
   }
@@ -39,8 +47,7 @@ Select **Qwen OAuth** and follow the device login instructions.
 
 OAuth models:
 
-- `qwen3-coder-plus`
-- `qwen3-vl-plus`
+- `coder-model`
 
 OpenAI-compatible examples:
 

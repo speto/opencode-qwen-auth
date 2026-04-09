@@ -100,8 +100,11 @@ Then add to your `opencode.json`:
         "compatibility": "strict"
       },
       "models": {
-        "qwen3-coder-plus": {},
-        "qwen3-vl-plus": { "attachment": true }
+        "coder-model": {
+          "name": "Qwen Coder",
+          "attachment": true,
+          "limit": { "context": 131072, "output": 16384 }
+        }
       }
     }
   }
@@ -126,7 +129,7 @@ Then add to your `opencode.json`:
 
 3. Start coding with Qwen models:
    ```
-   /model qwen/qwen3-coder-plus
+   /model qwen/coder-model
    ```
 
 ## Configuration
@@ -198,10 +201,9 @@ All options can be overridden via environment variables:
 
 ### Available via OAuth
 
-| Model              | Context Window | Features                     |
-| ------------------ | -------------- | ---------------------------- |
-| `qwen3-coder-plus` | 1M tokens      | Optimized for coding tasks   |
-| `qwen3-vl-plus`    | 256K tokens    | Vision + language multimodal |
+| Model          | Context Window | Features                               |
+| -------------- | -------------- | -------------------------------------- |
+| `coder-model`  | 128K tokens    | Coding + vision (Qwen 3.6 Plus)       |
 
 ## Multi-Account Rotation
 
