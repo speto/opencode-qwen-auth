@@ -245,6 +245,47 @@ describe("CLI installer", () => {
       ]);
     });
 
+    it("should deduplicate multiple variant entries into one canonical", () => {
+      const existingConfig = {
+        $schema: "https://opencode.ai/config.json",
+        plugin: [
+          "other-plugin",
+          "github:speto/opencode-qwen-auth@latest",
+          "opencode-qwen-auth",
+        ],
+        provider: {
+          qwen: {
+            npm: "@ai-sdk/openai",
+            options: {
+              baseURL: "https://portal.qwen.ai/v1",
+              compatibility: "strict",
+            },
+            models: {
+              "coder-model": {
+                name: "Qwen Coder",
+                attachment: true,
+                limit: { context: 1000000, output: 65536 },
+              },
+            },
+          },
+        },
+      };
+      writeFileSync(
+        join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const result = install();
+
+      expect(result.success).toBe(true);
+      expect(result.alreadyInstalled).toBe(false);
+      const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
+      expect(config.plugin).toEqual([
+        "other-plugin",
+        "@speto/opencode-qwen-auth",
+      ]);
+    });
+
     it("should preserve existing provider config", () => {
       const existingConfig = {
         $schema: "https://opencode.ai/config.json",
