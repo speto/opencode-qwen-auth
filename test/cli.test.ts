@@ -221,7 +221,7 @@ describe("CLI installer", () => {
       expect(coderModel).toBeDefined();
       expect(coderModel.name).toBe("Qwen Coder");
       expect(coderModel.attachment).toBe(true);
-      expect(coderModel.limit).toEqual({ context: 131072, output: 16384 });
+      expect(coderModel.limit).toEqual({ context: 1_000_000, output: 65_536 });
     });
 
     it("should complete without prompting when skipPrompt is true", async () => {

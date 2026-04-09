@@ -103,7 +103,7 @@ Then add to your `opencode.json`:
         "coder-model": {
           "name": "Qwen Coder",
           "attachment": true,
-          "limit": { "context": 131072, "output": 16384 }
+          "limit": { "context": 1000000, "output": 65536 }
         }
       }
     }

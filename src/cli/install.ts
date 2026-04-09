@@ -23,7 +23,7 @@ const DEFAULT_PROVIDER_CONFIG = {
       "coder-model": {
         name: "Qwen Coder",
         attachment: true,
-        limit: { context: 131072, output: 16384 },
+        limit: { context: 1_000_000, output: 65_536 },
       },
     },
   },
