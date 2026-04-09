@@ -424,12 +424,15 @@ export const createQwenOAuthPlugin =
                   }
                 }
 
-                const latestAuth = (await getAuth()) as AuthDetails;
-                if (!isOAuthAuth(latestAuth)) {
-                  return fetch(input, init);
-                }
-
-                const activeAuth = latestAuth.access ? latestAuth : authRecord;
+                const latestAccount = accountStorage.accounts[accountIndex];
+                const activeAuth: OAuthAuthDetails = {
+                  type: "oauth",
+                  refresh: latestAccount?.refreshToken ?? authRecord.refresh,
+                  access: latestAccount?.accessToken ?? authRecord.access,
+                  expires: latestAccount?.expires ?? authRecord.expires,
+                  resourceUrl:
+                    latestAccount?.resourceUrl ?? authRecord.resourceUrl,
+                };
 
                 // Get URL from input - OpenCode already constructs full URLs
                 let rawUrl: string;
@@ -500,10 +503,34 @@ export const createQwenOAuthPlugin =
                   needsTransform: needsResponsesTransform,
                 });
 
-                const response = await fetch(finalUrl, {
-                  ...finalInit,
-                  headers,
-                });
+                const timeoutMs = 120_000;
+                const timeoutSignal = AbortSignal.timeout(timeoutMs);
+                const callerSignal = finalInit.signal;
+                const combinedSignal = callerSignal
+                  ? AbortSignal.any([callerSignal, timeoutSignal])
+                  : timeoutSignal;
+
+                let response: Response;
+                try {
+                  response = await fetch(finalUrl, {
+                    ...finalInit,
+                    headers,
+                    signal: combinedSignal,
+                  });
+                } catch (error) {
+                  logger.debug("Fetch error", {
+                    accountIndex,
+                    error: String(error),
+                  });
+                  accountStorage = recordFailure(accountStorage, accountIndex);
+                  healthTracker.recordFailure(accountIndex);
+                  await saveAccounts(accountStorage);
+                  attempts += 1;
+                  if (attempts >= accountStorage.accounts.length) {
+                    throw error;
+                  }
+                  continue;
+                }
 
                 logger.debug("Response received", {
                   status: response.status,
@@ -560,7 +587,13 @@ export const createQwenOAuthPlugin =
                   const tieredMs = getBackoffMs(reason, attempts);
                   const retryAfterMs = headerMs ?? tieredMs;
 
-                  logger.debug("Rate limited or server error", {
+                  logger.info("Rate limited, rotating account", {
+                    status: response.status,
+                    reason,
+                    accountIndex,
+                    retryMs: retryAfterMs,
+                  });
+                  logger.debug("Rate limit details", {
                     status: response.status,
                     reason,
                     accountIndex,
