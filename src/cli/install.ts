@@ -141,13 +141,32 @@ function createBackup(configPath: string): string | null {
   return backupPath;
 }
 
+/** Extracts bare package name from npm specifiers like "github:user/repo@v1" → "repo" */
+function extractPluginName(specifier: string): string {
+  let name = specifier;
+
+  const colonIdx = name.indexOf(":");
+  if (colonIdx !== -1) name = name.slice(colonIdx + 1);
+
+  const slashIdx = name.lastIndexOf("/");
+  if (slashIdx !== -1) name = name.slice(slashIdx + 1);
+
+  const atIdx = name.indexOf("@");
+  if (atIdx > 0) name = name.slice(0, atIdx);
+
+  return name;
+}
+
 function hasPlugin(config: OpencodeConfig): boolean {
   if (!config.plugin || !Array.isArray(config.plugin)) {
     return false;
   }
-  return config.plugin.some(
-    (p) => p === PLUGIN_NAME || p.startsWith(`${PLUGIN_NAME}@`),
-  );
+  return config.plugin.some((p) => extractPluginName(p) === PLUGIN_NAME);
+}
+
+function isPluginCurrent(config: OpencodeConfig): boolean {
+  if (!config.plugin || !Array.isArray(config.plugin)) return false;
+  return config.plugin.some((p) => p === PLUGIN_NAME);
 }
 
 function hasQwenProvider(config: OpencodeConfig): boolean {
@@ -180,8 +199,14 @@ function addPlugin(config: OpencodeConfig): OpencodeConfig {
     updated.plugin = [];
   }
 
-  if (!hasPlugin(updated)) {
+  const existingIdx = updated.plugin.findIndex(
+    (p) => extractPluginName(p) === PLUGIN_NAME,
+  );
+
+  if (existingIdx === -1) {
     updated.plugin = [...updated.plugin, PLUGIN_NAME];
+  } else if (updated.plugin[existingIdx] !== PLUGIN_NAME) {
+    updated.plugin[existingIdx] = PLUGIN_NAME;
   }
 
   return updated;
@@ -217,6 +242,16 @@ function showDiff(before: OpencodeConfig, after: OpencodeConfig): void {
   const changeLines: string[] = [];
   if (!hasPlugin(before) && hasPlugin(after)) {
     changeLines.push(`Added plugin: ${PLUGIN_NAME}`);
+  } else {
+    const oldEntry = (before.plugin || []).find(
+      (p) => extractPluginName(p) === PLUGIN_NAME,
+    );
+    const newEntry = (after.plugin || []).find(
+      (p) => extractPluginName(p) === PLUGIN_NAME,
+    );
+    if (oldEntry && newEntry && oldEntry !== newEntry) {
+      changeLines.push(`Replaced plugin: ${oldEntry} → ${newEntry}`);
+    }
   }
   if (!hasQwenProvider(before) && hasQwenProvider(after)) {
     changeLines.push("Added provider: qwen");
@@ -302,10 +337,10 @@ export function install(options: { global?: boolean } = {}): {
   }
 
   let config = existsSync(configPath) ? loadConfig(configPath) : {};
-  const alreadyHasPlugin = hasPlugin(config);
+  const pluginCurrent = isPluginCurrent(config);
   const providerCurrent = isQwenProviderCurrent(config);
 
-  if (alreadyHasPlugin && providerCurrent) {
+  if (pluginCurrent && providerCurrent) {
     return { success: true, configPath, alreadyInstalled: true };
   }
 

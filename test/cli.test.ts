@@ -139,7 +139,7 @@ describe("CLI installer", () => {
       ).toBe(1);
     });
 
-    it("should detect versioned plugin as already installed", () => {
+    it("should replace versioned plugin with canonical name", () => {
       const existingConfig = {
         $schema: "https://opencode.ai/config.json",
         plugin: ["opencode-qwen-auth@1.0.0"],
@@ -167,7 +167,78 @@ describe("CLI installer", () => {
 
       const result = install();
 
-      expect(result.alreadyInstalled).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.alreadyInstalled).toBe(false);
+      const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
+      expect(config.plugin).toEqual(["opencode-qwen-auth"]);
+    });
+
+    it("should replace github: specifier with canonical plugin name", () => {
+      const existingConfig = {
+        $schema: "https://opencode.ai/config.json",
+        plugin: ["github:speto/opencode-qwen-auth@latest"],
+        provider: {
+          qwen: {
+            npm: "@ai-sdk/openai",
+            options: {
+              baseURL: "https://portal.qwen.ai/v1",
+              compatibility: "strict",
+            },
+            models: {
+              "coder-model": {
+                name: "Qwen Coder",
+                attachment: true,
+                limit: { context: 1000000, output: 65536 },
+              },
+            },
+          },
+        },
+      };
+      writeFileSync(
+        join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const result = install();
+
+      expect(result.success).toBe(true);
+      expect(result.alreadyInstalled).toBe(false);
+      const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
+      expect(config.plugin).toEqual(["opencode-qwen-auth"]);
+      expect(config.plugin.length).toBe(1);
+    });
+
+    it("should replace github: specifier without version", () => {
+      const existingConfig = {
+        $schema: "https://opencode.ai/config.json",
+        plugin: ["other-plugin", "github:foxswat/opencode-qwen-auth"],
+        provider: {
+          qwen: {
+            npm: "@ai-sdk/openai",
+            options: {
+              baseURL: "https://portal.qwen.ai/v1",
+              compatibility: "strict",
+            },
+            models: {
+              "coder-model": {
+                name: "Qwen Coder",
+                attachment: true,
+                limit: { context: 1000000, output: 65536 },
+              },
+            },
+          },
+        },
+      };
+      writeFileSync(
+        join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const result = install();
+
+      expect(result.success).toBe(true);
+      const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
+      expect(config.plugin).toEqual(["other-plugin", "opencode-qwen-auth"]);
     });
 
     it("should preserve existing provider config", () => {
