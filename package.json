@@ -1,6 +1,6 @@
 {
   "name": "@speto/opencode-qwen-auth",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Qwen OAuth authentication plugin for OpenCode with multi-account rotation and API translation",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

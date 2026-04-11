@@ -687,4 +687,6 @@ export const QwenOAuthPlugin = QwenCLIOAuthPlugin;
 
 export { sanitizeMalformedUrl, applyResourceUrl };
 
-export default QwenOAuthPlugin;
+// OpenCode's plugin loader (readV1Plugin) expects default export to be an
+// object with a server() method, NOT a bare Plugin function.
+export default { server: QwenOAuthPlugin };
